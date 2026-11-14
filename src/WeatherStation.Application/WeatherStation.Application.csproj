@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="WolverineFx" />
+    <PackageReference Include="WolverineFx.RuntimeCompilation" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WeatherStation.Domain\WeatherStation.Domain.csproj" />
+    <ProjectReference Include="..\WeatherStation.Contracts\WeatherStation.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

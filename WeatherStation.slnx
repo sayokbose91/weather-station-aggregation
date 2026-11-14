@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/WeatherStation.Api/WeatherStation.Api.csproj" />
+    <Project Path="src/WeatherStation.Application/WeatherStation.Application.csproj" />
+    <Project Path="src/WeatherStation.Client/WeatherStation.Client.csproj" />
+    <Project Path="src/WeatherStation.Contracts/WeatherStation.Contracts.csproj" />
+    <Project Path="src/WeatherStation.Domain/WeatherStation.Domain.csproj" />
+    <Project Path="src/WeatherStation.Infrastructure/WeatherStation.Infrastructure.csproj" />
+    <Project Path="src/WeatherStation.ServiceDefaults/WeatherStation.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+</Solution>
