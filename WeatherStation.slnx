@@ -6,7 +6,6 @@
     <Project Path="src/WeatherStation.Contracts/WeatherStation.Contracts.csproj" />
     <Project Path="src/WeatherStation.Domain/WeatherStation.Domain.csproj" />
     <Project Path="src/WeatherStation.Infrastructure/WeatherStation.Infrastructure.csproj" />
-    <Project Path="src/WeatherStation.ServiceDefaults/WeatherStation.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/tests/" />
 </Solution>

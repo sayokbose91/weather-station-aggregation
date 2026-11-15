@@ -11,7 +11,6 @@
   <ItemGroup>
     <ProjectReference Include="..\WeatherStation.Application\WeatherStation.Application.csproj" />
     <ProjectReference Include="..\WeatherStation.Infrastructure\WeatherStation.Infrastructure.csproj" />
-    <ProjectReference Include="..\WeatherStation.ServiceDefaults\WeatherStation.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>
