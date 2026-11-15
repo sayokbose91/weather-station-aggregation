@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WeatherStation.Api.Common.Http;
 using WeatherStation.Application.Features.Measurements;
@@ -7,6 +8,7 @@ using WeatherStation.Domain;
 namespace WeatherStation.Api.Controllers.V1;
 
 [ApiController]
+[Authorize]
 [Route(ApiRoutes.V1.Aggregate)]
 public sealed class MeasurementsController(IMeasurementAggregator aggregator) : ControllerBase
 {
