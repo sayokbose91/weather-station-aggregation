@@ -1,0 +1,28 @@
+@baseUrl = http://localhost:5080
+@apiKey = your-api-key
+
+GET {{baseUrl}}/health
+
+###
+
+POST {{baseUrl}}/api/v1/measurements/aggregate
+X-Api-Key: {{apiKey}}
+Content-Type: application/x-ndjson
+
+< ../../samples/spec-station-names.jsonl
+
+###
+
+POST {{baseUrl}}/api/v1/measurements/aggregate
+X-Api-Key: {{apiKey}}
+Content-Type: application/x-ndjson
+
+< ../../samples/measurements.jsonl
+
+###
+
+POST {{baseUrl}}/api/v1/measurements/aggregate
+X-Api-Key: {{apiKey}}
+Content-Type: application/x-ndjson
+
+< ../../samples/bad-lines.jsonl

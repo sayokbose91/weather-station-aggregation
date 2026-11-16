@@ -1,4 +1,9 @@
 <Solution>
+  <Folder Name="/samples/">
+    <File Path="samples/bad-lines.jsonl" />
+    <File Path="samples/measurements.jsonl" />
+    <File Path="samples/spec-station-names.jsonl" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/WeatherStation.Api/WeatherStation.Api.csproj" />
     <Project Path="src/WeatherStation.Application/WeatherStation.Application.csproj" />
