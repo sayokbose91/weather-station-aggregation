@@ -6,15 +6,20 @@ namespace WeatherStation.Application.Features.Measurements.Parsing;
 
 internal static class MeasurementLineParser
 {
-    private const string TemperatureInvalid = "'temperature' must be a number between -99.9 and 99.9 with one fractional digit.";
+    internal const string MalformedJson = "Malformed JSON.";
+    internal const string StationNameMissing = "Missing 'stationName'.";
+    internal const string TemperatureMissing = "Missing 'temperature'.";
+    internal const string StationNameInvalid = "'stationName' must be a UTF-8 string of 1-100 bytes.";
+    internal const string TemperatureNotANumber = "'temperature' must be a number.";
+    internal const string TemperatureOutOfRange = "'temperature' must be between -99.9 and 99.9.";
+    internal const string TemperatureFractionalDigit = "'temperature' must have one fractional digit.";
 
-    private static readonly string NameLengthInvalid = $"'stationName' must be 1-{StationName.MaxUtf8Bytes} UTF-8 bytes.";
-
-    private static readonly JsonSerializerOptions Options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    private static readonly JsonSerializerOptions Options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     public static bool TryParse(ReadOnlySpan<byte> line, out Measurement measurement, out string error)
     {
         measurement = default;
+        error = string.Empty;
 
         MeasurementLine? parsed;
         try
@@ -23,40 +28,81 @@ internal static class MeasurementLineParser
         }
         catch (JsonException e)
         {
-            error = "Malformed JSON.";
-            if (e.Path == "$.temperature") error = TemperatureInvalid;
-            if (e.Path == "$.stationName") error = "'stationName' must be a string.";
+            error = ReasonForUnreadableLine(line, e.Path);
             return false;
         }
 
-        if (parsed?.StationName is null)
+        if (parsed == null || parsed.StationName == null)
         {
-            error = "Missing 'stationName'.";
+            error = StationNameMissing;
             return false;
         }
 
-        if (parsed.Temperature is null)
+        if (parsed.Temperature == null)
         {
-            error = "Missing 'temperature'.";
+            error = TemperatureMissing;
             return false;
         }
 
         var nameBytes = Encoding.UTF8.GetByteCount(parsed.StationName);
-        if (nameBytes is 0 or > StationName.MaxUtf8Bytes)
+        if (nameBytes == 0 || nameBytes > StationName.MaxUtf8Bytes)
         {
-            error = NameLengthInvalid;
+            error = StationNameInvalid;
             return false;
         }
 
-        if (!Temperature.IsValid(parsed.Temperature.Value))
+        var temperature = parsed.Temperature.Value;
+        if (!Temperature.IsInRange(temperature))
         {
-            error = TemperatureInvalid;
+            error = TemperatureOutOfRange;
             return false;
         }
 
-        measurement = new Measurement(parsed.StationName, parsed.Temperature.Value);
-        error = "";
+        if (!Temperature.HasOneFractionalDigit(temperature))
+        {
+            error = TemperatureFractionalDigit;
+            return false;
+        }
+
+        measurement = new Measurement(parsed.StationName, temperature);
         return true;
+    }
+
+    private static string ReasonForUnreadableLine(ReadOnlySpan<byte> line, string? path)
+    {
+        if (!IsWellFormedJson(line))
+        {
+            return MalformedJson;
+        }
+
+        if (path == "$.stationName")
+        {
+            return StationNameInvalid;
+        }
+
+        if (path == "$.temperature")
+        {
+            return TemperatureNotANumber;
+        }
+
+        return MalformedJson;
+    }
+
+    private static bool IsWellFormedJson(ReadOnlySpan<byte> line)
+    {
+        var reader = new Utf8JsonReader(line);
+        try
+        {
+            while (reader.Read())
+            {
+            }
+
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     private sealed record MeasurementLine(string? StationName, decimal? Temperature);

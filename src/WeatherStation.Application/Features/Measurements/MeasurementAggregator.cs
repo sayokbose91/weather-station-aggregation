@@ -2,8 +2,10 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
+using System.Text;
 using WeatherStation.Application.Features.Measurements.Parsing;
 using WeatherStation.Domain;
+using WeatherStation.Domain.Models;
 
 namespace WeatherStation.Application.Features.Measurements;
 
@@ -13,22 +15,27 @@ internal sealed class MeasurementAggregator : IMeasurementAggregator
 
     internal const int MaxLineBytes = 64 * 1024;
 
-    public async Task<IDictionary<string, StationStatistics>> AggregateAsync(Stream input, CancellationToken cancellationToken)
+    private const int MaxFailedMeasurements = 10_000;
+
+    private const int MaxStoredLineLength = 1_000;
+
+    public async Task<AggregationResult> AggregateAsync(Stream input, CancellationToken cancellationToken)
     {
         var stations = new ConcurrentDictionary<string, StationStatistics>();
+        var failedMeasurements = new ConcurrentQueue<FailedMeasurement>();
 
         await Parallel.ForEachAsync(ReadBlocksAsync(input, cancellationToken), cancellationToken, (block, _) =>
         {
             var lines = block.Span;
             foreach (var range in lines.Split((byte)'\n'))
             {
-                AddLine(stations, lines[range]);
+                AddLine(stations, failedMeasurements, lines[range]);
             }
 
             return ValueTask.CompletedTask;
         });
 
-        return stations;
+        return new AggregationResult(stations, failedMeasurements.ToList());
     }
 
     private static async IAsyncEnumerable<ReadOnlyMemory<byte>> ReadBlocksAsync(Stream input, [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -58,7 +65,7 @@ internal sealed class MeasurementAggregator : IMeasurementAggregator
         }
     }
 
-    private static void AddLine(ConcurrentDictionary<string, StationStatistics> stations, ReadOnlySpan<byte> line)
+    private static void AddLine(ConcurrentDictionary<string, StationStatistics> stations, ConcurrentQueue<FailedMeasurement> failedMeasurements, ReadOnlySpan<byte> line)
     {
         line = line.TrimEnd((byte)'\r');
         if (line.IsEmpty)
@@ -66,12 +73,35 @@ internal sealed class MeasurementAggregator : IMeasurementAggregator
             return;
         }
 
-        if (!MeasurementLineParser.TryParse(line, out var measurement, out _)) return;
+        if (!MeasurementLineParser.TryParse(line, out var measurement, out var error))
+        {
+            AddFailedMeasurement(failedMeasurements, line, error);
+            return;
+        }
 
         var stats = stations.GetOrAdd(StationName.ToKey(measurement.StationName), _ => new StationStatistics());
         lock (stats)
         {
             Totals.Add(stats, measurement.Temperature);
+        }
+    }
+
+    private static void AddFailedMeasurement(ConcurrentQueue<FailedMeasurement> failedMeasurements, ReadOnlySpan<byte> line, string reason)
+    {
+        var text = Encoding.UTF8.GetString(line);
+        if (text.Length > MaxStoredLineLength)
+        {
+            text = text.Substring(0, MaxStoredLineLength);
+        }
+
+        if (failedMeasurements.Count < MaxFailedMeasurements)
+        {
+            failedMeasurements.Enqueue(new FailedMeasurement
+            {
+                Line = text,
+                Reason = reason,
+                FailedAt = DateTime.UtcNow,
+            });
         }
     }
 }

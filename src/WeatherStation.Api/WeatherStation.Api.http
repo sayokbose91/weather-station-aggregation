@@ -26,3 +26,8 @@ X-Api-Key: {{apiKey}}
 Content-Type: application/x-ndjson
 
 < ../../samples/bad-lines.jsonl
+
+###
+
+GET {{baseUrl}}/api/v1/measurements/failed?reason=temperature&page=1&pageSize=50
+X-Api-Key: {{apiKey}}
