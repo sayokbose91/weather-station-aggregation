@@ -13,6 +13,7 @@ namespace WeatherStation.Api.Controllers.V1;
 public sealed class MeasurementsController(IBusProvider bus) : ControllerBase
 {
     [HttpPost]
+    [DisableRequestSizeLimit]
     public async Task<IActionResult> AggregateAsync(CancellationToken ct)
     {
         var result = await bus.InvokeAsync<AggregateMeasurements.Response>(new AggregateMeasurements.Command(Request.Body), ct);

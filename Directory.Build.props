@@ -8,5 +8,6 @@
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <NoWarn>$(NoWarn);CA1848</NoWarn>
   </PropertyGroup>
 </Project>

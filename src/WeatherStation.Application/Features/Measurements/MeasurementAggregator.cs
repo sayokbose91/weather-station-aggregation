@@ -7,31 +7,43 @@ namespace WeatherStation.Application.Features.Measurements;
 
 internal sealed class MeasurementAggregator : IMeasurementAggregator
 {
+    internal const int MaxLineBytes = 64 * 1024;
+
+    private const int ReadSizeBytes = 1024 * 1024;
+
     public async Task<IReadOnlyDictionary<string, StationStatistics>> AggregateAsync(Stream input, CancellationToken cancellationToken)
     {
         var stations = new Dictionary<string, StationStatistics>();
-        var reader = PipeReader.Create(input);
+        var reader = PipeReader.Create(input, new StreamPipeReaderOptions(bufferSize: ReadSizeBytes, leaveOpen: true));
 
-        while (true)
+        try
         {
-            var result = await reader.ReadAsync(cancellationToken);
-            var lines = new SequenceReader<byte>(result.Buffer);
-
-            while (lines.TryReadTo(out ReadOnlySpan<byte> line, (byte)'\n'))
+            while (true)
             {
-                AddLine(stations, line);
-            }
+                var result = await reader.ReadAsync(cancellationToken);
+                var lines = new SequenceReader<byte>(result.Buffer);
 
-            if (result.IsCompleted)
-            {
-                AddLine(stations, lines.UnreadSequence.ToArray());
-                break;
-            }
+                while (lines.TryReadTo(out ReadOnlySpan<byte> line, (byte)'\n'))
+                {
+                    AddLine(stations, line);
+                }
 
-            reader.AdvanceTo(lines.Position, result.Buffer.End);
+                if (lines.Remaining > MaxLineBytes) lines.AdvanceToEnd();
+
+                if (result.IsCompleted)
+                {
+                    AddLine(stations, lines.UnreadSequence.ToArray());
+                    break;
+                }
+
+                reader.AdvanceTo(lines.Position, result.Buffer.End);
+            }
+        }
+        finally
+        {
+            await reader.CompleteAsync();
         }
 
-        await reader.CompleteAsync();
         return stations;
     }
 

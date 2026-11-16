@@ -1,13 +1,16 @@
-using WeatherStation.Api.Common.Authentication;
+using WeatherStation.Api;
 using WeatherStation.Application;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddApplication();
-builder.Services.AddControllers();
-builder.Services.AddApiKeyAuthentication(builder.Configuration);
+builder.Services
+    .AddApplication()
+    .AddApi(builder.Configuration);
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 
 app.UseAuthentication();
 app.UseAuthorization();
