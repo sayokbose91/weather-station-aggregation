@@ -1,5 +1,7 @@
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
 using WeatherStation.Application.Features.Measurements.Parsing;
 using WeatherStation.Domain;
 
@@ -7,47 +9,56 @@ namespace WeatherStation.Application.Features.Measurements;
 
 internal sealed class MeasurementAggregator : IMeasurementAggregator
 {
-    internal const int MaxLineBytes = 64 * 1024;
+    private const int BlockSizeBytes = 64 * 1024;
 
-    private const int ReadSizeBytes = 1024 * 1024;
+    internal const int MaxLineBytes = 64 * 1024;
 
     public async Task<IReadOnlyDictionary<string, StationStatistics>> AggregateAsync(Stream input, CancellationToken cancellationToken)
     {
-        var stations = new Dictionary<string, StationStatistics>();
-        var reader = PipeReader.Create(input, new StreamPipeReaderOptions(bufferSize: ReadSizeBytes, leaveOpen: true));
+        var stations = new ConcurrentDictionary<string, StationStatistics>();
+
+        await Parallel.ForEachAsync(ReadBlocksAsync(input, cancellationToken), cancellationToken, (block, _) =>
+        {
+            var lines = block.Span;
+            foreach (var range in lines.Split((byte)'\n'))
+            {
+                AddLine(stations, lines[range]);
+            }
+
+            return ValueTask.CompletedTask;
+        });
+
+        return stations;
+    }
+
+    private static async IAsyncEnumerable<ReadOnlyMemory<byte>> ReadBlocksAsync(Stream input, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var reader = PipeReader.Create(input, new StreamPipeReaderOptions(bufferSize: BlockSizeBytes, leaveOpen: true));
 
         try
         {
             while (true)
             {
                 var result = await reader.ReadAsync(cancellationToken);
-                var lines = new SequenceReader<byte>(result.Buffer);
+                var bytes = result.Buffer.ToArray();
 
-                while (lines.TryReadTo(out ReadOnlySpan<byte> line, (byte)'\n'))
-                {
-                    AddLine(stations, line);
-                }
+                var end = result.IsCompleted ? bytes.Length : Array.LastIndexOf(bytes, (byte)'\n') + 1;
+                if (end > 0) yield return bytes.AsMemory(0, end);
 
-                if (lines.Remaining > MaxLineBytes) lines.AdvanceToEnd();
+                if (result.IsCompleted) break;
 
-                if (result.IsCompleted)
-                {
-                    AddLine(stations, lines.UnreadSequence.ToArray());
-                    break;
-                }
+                if (bytes.Length - end > MaxLineBytes) end = bytes.Length;
 
-                reader.AdvanceTo(lines.Position, result.Buffer.End);
+                reader.AdvanceTo(result.Buffer.GetPosition(end), result.Buffer.End);
             }
         }
         finally
         {
             await reader.CompleteAsync();
         }
-
-        return stations;
     }
 
-    private static void AddLine(Dictionary<string, StationStatistics> stations, ReadOnlySpan<byte> line)
+    private static void AddLine(ConcurrentDictionary<string, StationStatistics> stations, ReadOnlySpan<byte> line)
     {
         line = line.TrimEnd((byte)'\r');
         if (line.IsEmpty)
@@ -57,13 +68,10 @@ internal sealed class MeasurementAggregator : IMeasurementAggregator
 
         if (!MeasurementLineParser.TryParse(line, out var measurement, out _)) return;
 
-        var key = StationName.ToKey(measurement.StationName);
-        if (!stations.TryGetValue(key, out var stats))
+        var stats = stations.GetOrAdd(StationName.ToKey(measurement.StationName), _ => new StationStatistics());
+        lock (stats)
         {
-            stats = new StationStatistics();
-            stations[key] = stats;
+            Totals.Add(stats, measurement.Temperature);
         }
-
-        Totals.Add(stats, measurement.Temperature);
     }
 }
