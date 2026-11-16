@@ -10,6 +10,7 @@ public static class ApiServiceCollectionExtensions
         services.AddControllers();
         services.AddProblemDetails();
         services.AddExceptionHandler<GlobalExceptionHandler>();
+        services.AddHealthChecks();
         services.AddApiKeyAuthentication(configuration);
         return services;
     }

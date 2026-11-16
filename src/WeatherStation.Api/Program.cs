@@ -1,5 +1,6 @@
 using WeatherStation.Api;
 using WeatherStation.Application;
+using WeatherStation.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,5 +17,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks($"/{ApiRoutes.Health}");
 
 await app.RunAsync();

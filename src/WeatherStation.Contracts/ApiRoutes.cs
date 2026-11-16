@@ -2,6 +2,7 @@ namespace WeatherStation.Contracts;
 
 public static class ApiRoutes
 {
+    public const string Health = "health";
     public const string ApiKeyHeader = "X-Api-Key";
 
     public static class V1
