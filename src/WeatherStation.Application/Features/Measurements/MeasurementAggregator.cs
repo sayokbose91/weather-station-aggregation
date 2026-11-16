@@ -13,7 +13,7 @@ internal sealed class MeasurementAggregator : IMeasurementAggregator
 
     internal const int MaxLineBytes = 64 * 1024;
 
-    public async Task<IReadOnlyDictionary<string, StationStatistics>> AggregateAsync(Stream input, CancellationToken cancellationToken)
+    public async Task<IDictionary<string, StationStatistics>> AggregateAsync(Stream input, CancellationToken cancellationToken)
     {
         var stations = new ConcurrentDictionary<string, StationStatistics>();
 

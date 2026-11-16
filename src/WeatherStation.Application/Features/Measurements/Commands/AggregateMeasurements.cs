@@ -7,7 +7,7 @@ public static class AggregateMeasurements
 {
     public sealed record Command(Stream Body);
 
-    public sealed record Response(IReadOnlyList<StationDto> Stations);
+    public sealed record Response(IList<StationDto> Stations);
 
     public sealed class Handler(IMeasurementAggregator aggregator)
     {
