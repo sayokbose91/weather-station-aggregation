@@ -55,6 +55,8 @@ Or by hand in Postman:
 
 You can also use the .http file in the Api project.
 
+There's Swagger at http://localhost:5080/swagger when it runs in Development, but it's only there to look at the endpoints. It can't send the key or a file, so use the collection to actually call it.
+
 If you use curl, add `-H "Content-Type: application/x-ndjson"` or you get an empty response:
 
     curl -X POST http://localhost:5080/api/v1/measurements/aggregate -H "X-Api-Key: your-api-key" -H "Content-Type: application/x-ndjson" --data-binary @samples/spec-station-names.jsonl
