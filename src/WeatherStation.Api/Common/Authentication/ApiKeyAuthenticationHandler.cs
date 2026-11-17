@@ -27,7 +27,7 @@ internal sealed class ApiKeyAuthenticationHandler(
             return Task.FromResult(AuthenticateResult.Fail("Invalid API key."));
         }
 
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.Name, "api-key-client")], SchemeName);
+        var identity = new ClaimsIdentity(SchemeName);
         return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName)));
     }
 }
