@@ -6,9 +6,9 @@ Send it a JSONL file of temperature readings and it sends back the min, mean and
 
 You need .NET 10.
 
-Set the API key first. It has to be at least 16 characters. You can put it in src/WeatherStation.Api/appsettings.json (ApiKey:Value) or in user secrets:
+Set the API key first, it can't be empty. You can put it in src/WeatherStation.Api/appsettings.json (ApiKey:Value) or in user secrets:
 
-    dotnet user-secrets set "ApiKey:Value" "pick-any-key-16-chars-or-more" --project src/WeatherStation.Api
+    dotnet user-secrets set "ApiKey:Value" "your-api-key" --project src/WeatherStation.Api
     dotnet run --project src/WeatherStation.Api
 
 It runs on localhost:5080. If there's no key the app won't start.
@@ -17,7 +17,9 @@ For Docker, put the key in appsettings.json and run `cd deploy && docker compose
 
 ## Calling it
 
-With Postman:
+There's a collection in postman/ that works in Postman and Insomnia. Import it and set the apiKey variable to your key.
+
+Or by hand in Postman:
 
 - POST http://localhost:5080/api/v1/measurements/aggregate
 - Add the X-Api-Key header.
@@ -83,7 +85,7 @@ The results go to the console. The "Sending..." and "Done in x s" messages go to
 - Temperature needs **exactly one decimal**. 12 or 12.34 are rejected.
 - The **mean is rounded to one decimal**. Everything uses decimal, not double.
 - Stations are **sorted by plain character code (ordinal)**, not language rules, so Ürümqi comes after Zagreb. The upside is the order is the same on every machine. A culture sort can differ between my laptop and a container.
-- There's **no upload size limit**. 1B rows is about 45 GB.
+- There's **no upload size limit**. 1B rows is about 47 GB.
 - **/health doesn't need a key**.
 - The body is **streamed with a PipeReader**, blocks are **processed in parallel** and the totals go in a ConcurrentDictionary, so **memory stays flat**.
 - I used **FluentValidation** for the line checks. I know it's slower on really big inputs and custom checks would be faster, but I didn't have time for that.
@@ -96,7 +98,7 @@ The results go to the console. The "Sending..." and "Done in x s" messages go to
 - Results only come back in the response and nothing is saved. If the client disconnects, **the work is lost**.
 - The **response only starts once the whole upload is read**. All stations sit in memory until then, and there's no cap on how many.
 - **One upload takes every core**, and there's no limit on concurrent uploads.
-- Failed lines are saved to a **local SQLite file with fire and forget**. They're lost on a crash or container restart, and it doesn't work with multiple instances.
+- Failed lines are saved to a **local SQLite file**. They're lost on a container restart, and it doesn't work with multiple instances.
 - There's **one shared API key** with no rotation. It's a plain header, so it needs HTTPS.
 - **No metrics**, only logs.
 - **ToTitleCase has quirks**, like n'djamena becoming N'djamena and 1st becoming 1St.
@@ -126,9 +128,22 @@ Other things I'd do:
 
 ## Perf
 
-On my laptop 1B rows takes about 3.5 min over HTTP, and memory stays around 300 MB. Bad lines don't slow it down.
+On my laptop (22 cores, Release build):
 
-The server mostly waits for the upload to come in, so the HTTP stream is the limit, not the parsing.
+| What | Rows | Time | Peak memory |
+|---|---|---|---|
+| 1B file, no HTTP | 1B (47 GB) | 4.8 min | 184 MB |
+| 1B made up by the client, over HTTP | 1B | 12.2 min | 339 MB |
+| 10 GB file, no HTTP | 212M | 67 s | 179 MB |
+| 10 GB file, over HTTP | 212M | 64 s | 354 MB |
+
+"No HTTP" means the same processing code reading straight from the file, so I could see what HTTP costs.
+
+That's about 3.5M rows a second, and memory stays flat no matter how big the file is.
+
+HTTP adds basically nothing, the 10 GB file takes the same time with or without it. The limit is parsing and validating each line.
+
+The 12 min run is slow because of the client. It can only make up about 1.4M rows a second, and the server was only using about 3 of the 22 cores.
 
 In a pod it gets one worker per CPU, so a small pod will be slower.
 
@@ -138,3 +153,7 @@ The way the upload is read in chunks of whole lines and then processed in parall
 
 - Stream into blocks of whole lines: https://learn.microsoft.com/en-us/dotnet/standard/io/pipelines
 - Blocks in parallel: https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.parallel.foreachasync
+
+The API key check is the standard AuthenticationHandler pattern from this:
+
+- The ASP.NET Core team's sample handler: https://github.com/dotnet/aspnetcore/blob/main/src/Security/samples/CustomAuthorizationFailureResponse/Authentication/SampleAuthenticationHandler.cs
