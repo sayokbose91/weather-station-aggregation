@@ -1,4 +1,9 @@
 <Solution>
+  <Folder Name="/deploy/">
+    <File Path=".dockerignore" />
+    <File Path="deploy/docker-compose.yml" />
+    <File Path="src/WeatherStation.Api/Dockerfile" />
+  </Folder>
   <Folder Name="/samples/">
     <File Path="samples/bad-lines.jsonl" />
     <File Path="samples/measurements.jsonl" />
