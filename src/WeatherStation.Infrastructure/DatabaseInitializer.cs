@@ -1,7 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using WeatherStation.Infrastructure.Contexts;
 
-namespace WeatherStation.Infrastructure.Contexts;
+namespace WeatherStation.Infrastructure;
 
 public class DatabaseInitializer(IServiceScopeFactory scopeFactory) : IHostedService
 {

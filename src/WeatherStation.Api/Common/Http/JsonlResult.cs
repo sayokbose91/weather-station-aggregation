@@ -5,14 +5,14 @@ using WeatherStation.Contracts;
 
 namespace WeatherStation.Api.Common.Http;
 
-internal sealed class JsonlResult<T>(IAsyncEnumerable<T> items) : IActionResult
+internal sealed class JsonlResult<T>(IEnumerable<T> items) : IActionResult
 {
-    private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)
+    private static readonly JsonSerializerOptions Options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    private static readonly byte[] NewLine = "\n"u8.ToArray();
+    private static readonly byte[] NewLine = new byte[] { (byte)'\n' };
 
     public async Task ExecuteResultAsync(ActionContext context)
     {
@@ -20,7 +20,7 @@ internal sealed class JsonlResult<T>(IAsyncEnumerable<T> items) : IActionResult
         var cancellationToken = context.HttpContext.RequestAborted;
         response.ContentType = MediaTypes.Ndjson;
 
-        await foreach (var item in items.WithCancellation(cancellationToken))
+        foreach (var item in items)
         {
             await JsonSerializer.SerializeAsync(response.Body, item, Options, cancellationToken);
             await response.Body.WriteAsync(NewLine, cancellationToken);

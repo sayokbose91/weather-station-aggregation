@@ -14,7 +14,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddDbContext<WeatherStationDbContext>(options =>
             options.UseSqlite(configuration.GetConnectionString("WeatherStation")));
 
-        services.AddScoped<IMeasurementRepository, MeasurementRepository>();
+        services.AddScoped<IFailedMeasurementRepository, FailedMeasurementRepository>();
         services.AddHostedService<DatabaseInitializer>();
 
         return services;

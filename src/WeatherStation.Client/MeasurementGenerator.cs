@@ -11,10 +11,10 @@ internal static class MeasurementGenerator
 
         for (long i = 0; i < count; i++)
         {
-            var (name, average) = Stations.All[random.Next(Stations.All.Length)];
-            var temperature = average + random.Next(-150, 151) * 0.1m;
+            var station = Stations.All[random.Next(Stations.All.Length)];
+            var temperature = station.Average + random.Next(-150, 151) * 0.1m;
 
-            yield return new Measurement(RandomCase(random, name), temperature);
+            yield return new Measurement(RandomCase(random, station.Name), temperature);
         }
     }
 

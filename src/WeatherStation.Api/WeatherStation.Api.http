@@ -29,5 +29,5 @@ Content-Type: application/x-ndjson
 
 ###
 
-GET {{baseUrl}}/api/v1/measurements/failed?reason=temperature&page=1&pageSize=50
+GET {{baseUrl}}/api/v1/measurements/failed?page=1&pageSize=50
 X-Api-Key: {{apiKey}}

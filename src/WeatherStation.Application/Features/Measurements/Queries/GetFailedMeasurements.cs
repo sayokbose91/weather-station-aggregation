@@ -5,11 +5,11 @@ namespace WeatherStation.Application.Features.Measurements.Queries;
 
 public static class GetFailedMeasurements
 {
-    public sealed record Query(string? Reason, DateTime? From, DateTime? To, int Page, int PageSize);
+    public sealed record Query(DateTime? From, DateTime? To, int Page, int PageSize);
 
     public sealed record Response(PagedResponse<FailedMeasurementDto> Result);
 
-    public sealed class Handler(IMeasurementRepository repository)
+    public sealed class Handler(IFailedMeasurementRepository repository)
     {
         private const int MaxPageSize = 500;
 
@@ -20,9 +20,9 @@ public static class GetFailedMeasurements
             pageSize = Math.Min(pageSize, MaxPageSize);
 
             var failedMeasurements =
-                await repository.GetFailedMeasurementsAsync(query.Reason, query.From, query.To, page, pageSize, ct);
-            
-            var totalCount = await repository.CountFailedMeasurementsAsync(query.Reason, query.From, query.To, ct);
+                await repository.GetFailedMeasurementsAsync(query.From, query.To, page, pageSize, ct);
+
+            var totalCount = await repository.CountFailedMeasurementsAsync(query.From, query.To, ct);
 
             var items = failedMeasurements
                 .Select(f => new FailedMeasurementDto(f.Id, f.Line, f.Reason, f.FailedAt))

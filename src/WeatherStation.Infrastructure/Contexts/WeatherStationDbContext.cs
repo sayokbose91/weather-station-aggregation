@@ -12,7 +12,6 @@ public class WeatherStationDbContext(DbContextOptions<WeatherStationDbContext> o
         modelBuilder.Entity<FailedMeasurement>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.HasIndex(e => e.FailedAt);
         });
     }

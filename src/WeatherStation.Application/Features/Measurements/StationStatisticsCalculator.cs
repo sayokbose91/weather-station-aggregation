@@ -1,8 +1,8 @@
-using WeatherStation.Domain;
+using WeatherStation.Domain.Models;
 
 namespace WeatherStation.Application.Features.Measurements;
 
-internal static class Totals
+internal static class StationStatisticsCalculator
 {
     public static void Add(StationStatistics stats, decimal temperature)
     {

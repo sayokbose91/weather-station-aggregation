@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http.Headers;
 using Microsoft.Extensions.Configuration;
 using Refit;
 using WeatherStation.Client;
@@ -23,7 +24,14 @@ http.DefaultRequestHeaders.ExpectContinue = true;
 
 var api = RestService.For<IWeatherStationApi>(http);
 
-Console.Error.WriteLine(string.IsNullOrEmpty(file) ? $"Sending {count:N0} generated measurements." : $"Sending {file}.");
+if (string.IsNullOrEmpty(file))
+{
+    Console.Error.WriteLine($"Sending {count:N0} generated measurements.");
+}
+else
+{
+    Console.Error.WriteLine($"Sending {file}.");
+}
 
 using var cancellation = new CancellationTokenSource();
 if (!Console.IsInputRedirected)
@@ -40,9 +48,7 @@ var stopwatch = Stopwatch.StartNew();
 
 try
 {
-    using HttpContent measurements = string.IsNullOrEmpty(file)
-        ? new JsonlContent<Measurement>(MeasurementGenerator.Generate(count))
-        : new StreamContent(File.OpenRead(file)) { Headers = { ContentType = new(MediaTypes.Ndjson) } };
+    using var measurements = CreateContent(file, count);
     using var results = new StreamReader(await api.AggregateAsync(measurements, cancellation.Token));
 
     string? line;
@@ -69,3 +75,15 @@ catch (OperationCanceledException)
 
 Console.Error.WriteLine($"Done in {stopwatch.Elapsed.TotalSeconds:N1} s");
 return 0;
+
+static HttpContent CreateContent(string? file, long count)
+{
+    if (string.IsNullOrEmpty(file))
+    {
+        return new JsonlContent<Measurement>(MeasurementGenerator.Generate(count));
+    }
+
+    var content = new StreamContent(File.OpenRead(file));
+    content.Headers.ContentType = new MediaTypeHeaderValue(MediaTypes.Ndjson);
+    return content;
+}

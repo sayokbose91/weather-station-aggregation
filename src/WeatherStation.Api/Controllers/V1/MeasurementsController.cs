@@ -18,6 +18,6 @@ public sealed class MeasurementsController(IBusProvider bus) : ControllerBase
     {
         var result = await bus.InvokeAsync<AggregateMeasurements.Response>(new AggregateMeasurements.Command(Request.Body), ct);
 
-        return new JsonlResult<StationDto>(result.Stations.ToAsyncEnumerable());
+        return new JsonlResult<StationDto>(result.Stations);
     }
 }

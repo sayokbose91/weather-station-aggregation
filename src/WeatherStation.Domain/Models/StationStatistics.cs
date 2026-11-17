@@ -1,4 +1,4 @@
-namespace WeatherStation.Domain;
+namespace WeatherStation.Domain.Models;
 
 public sealed class StationStatistics
 {

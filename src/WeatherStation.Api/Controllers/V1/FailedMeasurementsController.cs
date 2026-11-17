@@ -13,14 +13,13 @@ public sealed class FailedMeasurementsController(IBusProvider bus) : ControllerB
 {
     [HttpGet]
     public async Task<IActionResult> GetAsync(
-        [FromQuery] string? reason,
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
         CancellationToken ct,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
     {
-        var query = new GetFailedMeasurements.Query(reason, from, to, page, pageSize);
+        var query = new GetFailedMeasurements.Query(from, to, page, pageSize);
         var response = await bus.InvokeAsync<GetFailedMeasurements.Response>(query, ct);
 
         return Ok(response.Result);

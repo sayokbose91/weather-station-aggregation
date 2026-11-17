@@ -3,13 +3,14 @@ using System.Collections.Concurrent;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using System.Text;
+
 using WeatherStation.Application.Features.Measurements.Parsing;
 using WeatherStation.Domain;
 using WeatherStation.Domain.Models;
 
 namespace WeatherStation.Application.Features.Measurements;
 
-internal sealed class MeasurementAggregator : IMeasurementAggregator
+internal sealed class MeasurementAggregator(MeasurementLineParser parser) : IMeasurementAggregator
 {
     private const int BlockSizeBytes = 64 * 1024;
 
@@ -26,10 +27,10 @@ internal sealed class MeasurementAggregator : IMeasurementAggregator
 
         await Parallel.ForEachAsync(ReadBlocksAsync(input, cancellationToken), cancellationToken, (block, _) =>
         {
-            var lines = block.Span;
-            foreach (var range in lines.Split((byte)'\n'))
+            var text = Encoding.UTF8.GetString(block.Span);
+            foreach (var line in text.Split('\n'))
             {
-                AddLine(stations, failedMeasurements, lines[range]);
+                AddLine(stations, failedMeasurements, line);
             }
 
             return ValueTask.CompletedTask;
@@ -38,7 +39,9 @@ internal sealed class MeasurementAggregator : IMeasurementAggregator
         return new AggregationResult(stations, failedMeasurements.ToList());
     }
 
-    private static async IAsyncEnumerable<ReadOnlyMemory<byte>> ReadBlocksAsync(Stream input, [EnumeratorCancellation] CancellationToken cancellationToken)
+    private static async IAsyncEnumerable<ReadOnlyMemory<byte>> ReadBlocksAsync(
+        Stream input,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var reader = PipeReader.Create(input, new StreamPipeReaderOptions(bufferSize: BlockSizeBytes, leaveOpen: true));
 
@@ -65,15 +68,18 @@ internal sealed class MeasurementAggregator : IMeasurementAggregator
         }
     }
 
-    private static void AddLine(ConcurrentDictionary<string, StationStatistics> stations, ConcurrentQueue<FailedMeasurement> failedMeasurements, ReadOnlySpan<byte> line)
+    private void AddLine(
+        ConcurrentDictionary<string, StationStatistics> stations,
+        ConcurrentQueue<FailedMeasurement> failedMeasurements,
+        string line)
     {
-        line = line.TrimEnd((byte)'\r');
-        if (line.IsEmpty)
+        line = line.TrimEnd('\r');
+        if (line.Length == 0)
         {
             return;
         }
 
-        if (!MeasurementLineParser.TryParse(line, out var measurement, out var error))
+        if (!parser.TryParse(line, out var measurement, out var error))
         {
             AddFailedMeasurement(failedMeasurements, line, error);
             return;
@@ -82,26 +88,31 @@ internal sealed class MeasurementAggregator : IMeasurementAggregator
         var stats = stations.GetOrAdd(StationName.ToKey(measurement.StationName), _ => new StationStatistics());
         lock (stats)
         {
-            Totals.Add(stats, measurement.Temperature);
+            StationStatisticsCalculator.Add(stats, measurement.Temperature);
         }
     }
 
-    private static void AddFailedMeasurement(ConcurrentQueue<FailedMeasurement> failedMeasurements, ReadOnlySpan<byte> line, string reason)
+    private static void AddFailedMeasurement(
+        ConcurrentQueue<FailedMeasurement> failedMeasurements,
+        string line,
+        string reason)
     {
-        var text = Encoding.UTF8.GetString(line);
+        if (failedMeasurements.Count >= MaxFailedMeasurements)
+        {
+            return;
+        }
+
+        var text = line;
         if (text.Length > MaxStoredLineLength)
         {
             text = text.Substring(0, MaxStoredLineLength);
         }
 
-        if (failedMeasurements.Count < MaxFailedMeasurements)
+        failedMeasurements.Enqueue(new FailedMeasurement
         {
-            failedMeasurements.Enqueue(new FailedMeasurement
-            {
-                Line = text,
-                Reason = reason,
-                FailedAt = DateTime.UtcNow,
-            });
-        }
+            Line = text,
+            Reason = reason,
+            FailedAt = DateTime.UtcNow,
+        });
     }
 }

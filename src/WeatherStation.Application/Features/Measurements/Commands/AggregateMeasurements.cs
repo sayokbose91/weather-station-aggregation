@@ -37,7 +37,7 @@ public static class AggregateMeasurements
             try
             {
                 await using var scope = scopeFactory.CreateAsyncScope();
-                var repository = scope.ServiceProvider.GetRequiredService<IMeasurementRepository>();
+                var repository = scope.ServiceProvider.GetRequiredService<IFailedMeasurementRepository>();
                 await repository.AddFailedMeasurementsAsync(failedMeasurements, CancellationToken.None);
             }
             catch (Exception e)

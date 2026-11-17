@@ -1,4 +1,3 @@
-using WeatherStation.Domain;
 using WeatherStation.Domain.Models;
 
 namespace WeatherStation.Application.Features.Measurements;
