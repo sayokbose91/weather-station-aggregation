@@ -17,5 +17,7 @@
     <Project Path="src/WeatherStation.Domain/WeatherStation.Domain.csproj" />
     <Project Path="src/WeatherStation.Infrastructure/WeatherStation.Infrastructure.csproj" />
   </Folder>
-  <Folder Name="/tests/" />
+  <Folder Name="/tests/">
+    <Project Path="tests/WeatherStation.UnitTests/WeatherStation.UnitTests.csproj" />
+  </Folder>
 </Solution>
