@@ -15,13 +15,21 @@ Run everything below from this folder.
 
 ### 2. Set the API key
 
-Pick any key, it just can't be empty. User secrets is easiest:
+Pick any key, it just can't be empty, and put it in src/WeatherStation.Api/appsettings.json:
+
+    "ApiKey": {
+      "Value": "your-api-key"
+    }
+
+If you're using the console app too, put the same key in src/WeatherStation.Client/appsettings.json:
+
+    "ApiKey": "your-api-key"
+
+You can use user secrets for the API instead if you don't want the key in a file:
 
     dotnet user-secrets set "ApiKey:Value" "your-api-key" --project src/WeatherStation.Api
 
-Or put it in src/WeatherStation.Api/appsettings.json under ApiKey:Value.
-
-If you want to use the console app too, put the same key in src/WeatherStation.Client/appsettings.json under ApiKey. The client only reads its appsettings and environment variables, not user secrets.
+Just know that user secrets win over appsettings when both are set. The client doesn't read user secrets, only its appsettings and environment variables.
 
 If there's no key the API won't start and tells you to set one.
 
@@ -53,7 +61,7 @@ Or by hand in Postman:
 
 - POST http://localhost:5080/api/v1/measurements/aggregate
 - Add the X-Api-Key header.
-- Body, binary, then pick any file from samples/.
+- Body, binary, then pick any file from samples/. The files are just text, binary only means Postman sends the file as it is. Raw text works too.
 
 You can also use the .http file in the Api project.
 
