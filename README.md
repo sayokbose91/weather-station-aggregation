@@ -113,7 +113,14 @@ By default it makes up 1M rows from 44 cities and streams them, so nothing gets 
 - Count: how many rows to make up. Max is 1B.
 - MeasurementsFile: send this file instead. Count is ignored then.
 
-Environment variables override appsettings, so you don't have to edit the file every time. In PowerShell:
+To try a different number or a file, just change them in src/WeatherStation.Client/appsettings.json:
+
+    "Count": 10000000,
+    "MeasurementsFile": "samples/bad-lines.jsonl"
+
+MeasurementsFile is relative to where you run it from, so from the repo root samples/... works. If you run it from your IDE use the full path, the IDE might run it from the bin folder. Set MeasurementsFile back to "" to go back to made up rows.
+
+Environment variables override appsettings too, so you don't have to edit the file every time. In PowerShell:
 
     $env:Count = "1000000000"
     dotnet run --project src/WeatherStation.Client
