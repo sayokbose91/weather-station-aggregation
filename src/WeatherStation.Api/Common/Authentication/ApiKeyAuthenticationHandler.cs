@@ -1,6 +1,4 @@
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
@@ -19,10 +17,9 @@ internal sealed class ApiKeyAuthenticationHandler(
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var provided = Encoding.UTF8.GetBytes(Request.Headers[ApiRoutes.ApiKeyHeader].ToString());
-        var expected = Encoding.UTF8.GetBytes(apiKey.Value.Value);
+        var provided = Request.Headers[ApiRoutes.ApiKeyHeader].ToString();
 
-        if (!CryptographicOperations.FixedTimeEquals(provided, expected))
+        if (provided != apiKey.Value.Value)
         {
             return Task.FromResult(AuthenticateResult.Fail("Invalid API key."));
         }
