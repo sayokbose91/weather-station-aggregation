@@ -8,7 +8,7 @@ public static class ApiKeyAuthenticationExtensions
     {
         services.AddOptions<ApiKeyOptions>()
             .Bind(configuration.GetSection(ApiKeyOptions.SectionName))
-            .Validate(o => !string.IsNullOrWhiteSpace(o.Value), "Set ApiKey:Value with user-secrets or the ApiKey__Value environment variable.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.Value), "Set ApiKey:Value in appsettings.json, with user-secrets or with the ApiKey__Value environment variable.")
             .ValidateOnStart();
 
         services.AddAuthentication(ApiKeyAuthenticationHandler.SchemeName)
