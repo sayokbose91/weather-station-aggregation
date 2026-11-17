@@ -4,6 +4,9 @@
     <File Path="deploy/docker-compose.yml" />
     <File Path="src/WeatherStation.Api/Dockerfile" />
   </Folder>
+  <Folder Name="/postman/">
+    <File Path="postman/WeatherStation.postman_collection.json" />
+  </Folder>
   <Folder Name="/samples/">
     <File Path="samples/bad-lines.jsonl" />
     <File Path="samples/measurements.jsonl" />
