@@ -7,12 +7,12 @@ namespace WeatherStation.Api.Common.Http;
 
 internal sealed class JsonlResult<T>(IEnumerable<T> items) : IActionResult
 {
-    private static readonly JsonSerializerOptions Options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+    private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    private static readonly byte[] NewLine = new byte[] { (byte)'\n' };
+    private static readonly byte[] NewLine = new[] { (byte)'\n' };
 
     public async Task ExecuteResultAsync(ActionContext context)
     {
