@@ -21,6 +21,8 @@ Pick any key, it just can't be empty. User secrets is easiest:
 
 Or put it in src/WeatherStation.Api/appsettings.json under ApiKey:Value.
 
+If you want to use the console app too, put the same key in src/WeatherStation.Client/appsettings.json under ApiKey. The client only reads its appsettings and environment variables, not user secrets.
+
 If there's no key the API won't start and tells you to set one.
 
 ### 3. Start the API
